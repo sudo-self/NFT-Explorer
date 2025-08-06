@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { BrowserProvider, JsonRpcProvider, keccak256, toUtf8Bytes } from 'ethers';
-import NftCard from '../components/nftcard';
-import { fetchNFTs } from '../utils/fetchNFTs';
-import EthGLBViewer from '../components/EthModel';
+import { useState, useEffect, useRef } from "react";
+import {
+  BrowserProvider,
+  JsonRpcProvider,
+  keccak256,
+  toUtf8Bytes,
+} from "ethers";
+import NftCard from "../components/nftcard";
+import { fetchNFTs } from "../utils/fetchNFTs";
+import EthGLBViewer from "../components/EthModel";
 
 function generateIdenticon(address, size = 8, scale = 4) {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = size * scale;
   canvas.height = size * scale;
-  const ctx = canvas.getContext('2d');
-
+  const ctx = canvas.getContext("2d");
   if (!address) return null;
-
   const hash = keccak256(toUtf8Bytes(address));
-  let color = '#' + hash.slice(2, 8);
+  let color = "#" + hash.slice(2, 8);
   ctx.fillStyle = color;
-
   for (let i = 0; i < size * size; i++) {
     const x = (i % size) * scale;
     const y = Math.floor(i / size) * scale;
@@ -29,18 +31,18 @@ function generateIdenticon(address, size = 8, scale = 4) {
 }
 
 const safeString = (input) => {
-  if (typeof input === 'string') return input;
-  if (typeof input === 'object' && input !== null) return JSON.stringify(input);
-  return '';
+  if (typeof input === "string") return input;
+  if (typeof input === "object" && input !== null) return JSON.stringify(input);
+  return "";
 };
 
 const Explore = () => {
-  const [owner, setOwner] = useState('');
-  const [contractAddress, setContractAddress] = useState('');
+  const [owner, setOwner] = useState("");
+  const [contractAddress, setContractAddress] = useState("");
   const [NFTs, setNFTs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [submittedOwner, setSubmittedOwner] = useState('');
+  const [submittedOwner, setSubmittedOwner] = useState("");
   const [ethPrice, setEthPrice] = useState(null);
   const [priceLoading, setPriceLoading] = useState(true);
   const [priceError, setPriceError] = useState(null);
@@ -50,24 +52,24 @@ const Explore = () => {
   const [latestBlocks, setLatestBlocks] = useState([]);
   const [blocksLoading, setBlocksLoading] = useState(true);
   const [blocksError, setBlocksError] = useState(null);
+  const [pageKey, setPageKey] = useState(null);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
-  const [pageKey, setPageKey] = useState(null); // Pagination key for infinite scroll
   const containerRef = useRef(null);
+  const ALCHEMY_API_URL =
+    "https://eth-mainnet.g.alchemy.com/v2/fIYnOgt3AYXKWnd62G3pu4trdY0fN2iQ";
 
-  const ALCHEMY_API_URL = 'https://eth-mainnet.g.alchemy.com/v2/fIYnOgt3AYXKWnd62G3pu4trdY0fN2iQ';
-
-  // Fetch ETH price once
   useEffect(() => {
     const fetchEthPrice = async () => {
       setPriceLoading(true);
       try {
         const res = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+          "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
         );
         const data = await res.json();
         setEthPrice(data.ethereum?.usd || null);
       } catch {
-        setPriceError('Failed to fetch ETH price');
+        setPriceError("Failed to fetch ETH price");
       } finally {
         setPriceLoading(false);
       }
@@ -75,7 +77,6 @@ const Explore = () => {
     fetchEthPrice();
   }, []);
 
-  // Generate avatar from walletAddress
   useEffect(() => {
     if (walletAddress) {
       const dataUrl = generateIdenticon(walletAddress);
@@ -85,7 +86,6 @@ const Explore = () => {
     }
   }, [walletAddress]);
 
-  // Fetch latest 4 blocks
   useEffect(() => {
     const fetchLatestBlocks = async () => {
       setBlocksLoading(true);
@@ -93,71 +93,71 @@ const Explore = () => {
       try {
         const provider = new JsonRpcProvider(ALCHEMY_API_URL);
         const latestBlockNumber = await provider.getBlockNumber();
-
         const blockPromises = [];
         for (let i = 0; i < 4; i++) {
           blockPromises.push(provider.getBlock(latestBlockNumber - i));
         }
-
         const blocks = await Promise.all(blockPromises);
         setLatestBlocks(blocks);
       } catch (err) {
         console.error(err);
-        setBlocksError('Failed to load latest blocks');
+        setBlocksError("Failed to load latest blocks");
       } finally {
         setBlocksLoading(false);
       }
     };
-
     fetchLatestBlocks();
   }, []);
 
-  // Wallet connect
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert('Please install MetaMask');
+      alert("Please install MetaMask");
       return;
     }
-
     try {
       const provider = new BrowserProvider(window.ethereum);
-      const accounts = await provider.send('eth_requestAccounts', []);
+      const accounts = await provider.send("eth_requestAccounts", []);
       const address = accounts[0];
       setWalletAddress(address);
       setOwner(address);
-
       try {
         const resolvedEns = await provider.lookupAddress(address);
         setEnsName(resolvedEns || null);
       } catch (ensErr) {
-        console.warn('ENS lookup failed:', ensErr);
+        console.warn("ENS lookup failed:", ensErr);
         setEnsName(null);
       }
     } catch (err) {
-      console.error('Wallet connection failed:', err);
+      console.error("Wallet connection failed:", err);
     }
   };
 
-  // Wallet disconnect
   const disconnectWallet = () => {
     setWalletAddress(null);
     setEnsName(null);
     setAvatarUrl(null);
-    setOwner('');
-    setContractAddress('');
+    setOwner("");
+    setContractAddress("");
     setNFTs([]);
-    setSubmittedOwner('');
+    setSubmittedOwner("");
     setError(null);
     setPageKey(null);
   };
 
-  // Load NFTs with pagination
-  const loadNFTs = async (ownerAddr, contractAddr, nextPageKey = null, append = false) => {
+  const loadNFTs = async (
+    ownerAddr,
+    contractAddr,
+    nextPageKey = null,
+    append = false,
+  ) => {
     setLoading(true);
     setError(null);
     try {
-      const { nfts, pageKey: newPageKey } = await fetchNFTs(ownerAddr, contractAddr, nextPageKey);
-
+      const { nfts, pageKey: newPageKey } = await fetchNFTs(
+        ownerAddr,
+        contractAddr,
+        nextPageKey,
+      );
       if (append) {
         setNFTs((prev) => [...prev, ...nfts]);
       } else {
@@ -165,37 +165,33 @@ const Explore = () => {
       }
       setPageKey(newPageKey || null);
     } catch (e) {
-      setError('Failed to fetch NFTs. Please check the address.');
+      setError("Failed to fetch NFTs. Please check the address.");
       if (!append) setNFTs([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle initial search
   const handleSearch = async (e) => {
     e.preventDefault();
     setSubmittedOwner(owner);
     setPageKey(null);
+    setIsHeaderCollapsed(true);
     await loadNFTs(owner, contractAddress, null, false);
   };
 
-  // Paste from clipboard
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
       if (text) setOwner(text.trim());
     } catch (err) {
-      console.error('Failed to read from clipboard', err);
+      console.error("Failed to read from clipboard", err);
     }
   };
 
-  // Infinite scroll handler inside main container
   const handleScroll = () => {
     if (!containerRef.current || loading || !pageKey) return;
-
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    // When within 150px from bottom, load more
     if (scrollHeight - scrollTop - clientHeight < 150) {
       loadNFTs(submittedOwner, contractAddress, pageKey, true);
     }
@@ -204,20 +200,42 @@ const Explore = () => {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, [loading, pageKey, submittedOwner, contractAddress]);
 
-  const truncate = (addr) => addr.slice(0, 6) + '...' + addr.slice(-4);
+  useEffect(() => {
+    let lastScrollTop = 0;
+    const container = containerRef.current;
+    const onScroll = () => {
+      const st = container.scrollTop;
+      if (st < lastScrollTop) setIsHeaderCollapsed(false);
+      else if (st > 100) setIsHeaderCollapsed(true);
+      lastScrollTop = st <= 0 ? 0 : st;
+    };
+    if (container) container.addEventListener("scroll", onScroll);
+    return () => {
+      if (container) container.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
-  const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
+  const truncate = (addr) => addr.slice(0, 6) + "..." + addr.slice(-4);
+  const formatTimestamp = (timestamp) =>
+    new Date(timestamp * 1000).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
 
   return (
     <div className="h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-sans relative">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-md shadow-lg px-4 py-4">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-md shadow-lg px-4 transition-all duration-500 ease-in-out ${
+          isHeaderCollapsed
+            ? "py-2 opacity-0 pointer-events-none"
+            : "py-4 opacity-100"
+        }`}
+      >
         <div className="relative max-w-5xl mx-auto text-center">
           <div className="absolute top-3 right-4 flex items-center gap-2">
             {avatarUrl && (
@@ -235,7 +253,10 @@ const Explore = () => {
                 Disconnect: {ensName || truncate(walletAddress)}
               </button>
             ) : (
-              <button onClick={connectWallet} aria-label="Connect with MetaMask">
+              <button
+                onClick={connectWallet}
+                aria-label="Connect with MetaMask"
+              >
                 <img
                   src="/Metamask.svg"
                   alt="MetaMask Logo"
@@ -251,14 +272,16 @@ const Explore = () => {
 
           <div className="mb-4 text-cyan-400 font-semibold text-lg flex items-center justify-center gap-2">
             <EthGLBViewer />
-            {priceLoading && 'Loading ETH price...'}
+            {priceLoading && "Loading ETH price..."}
             {priceError && <span className="text-red-500">{priceError}</span>}
             {!priceLoading && ethPrice && (
               <span>
-                1 ETH = ${ethPrice.toLocaleString(undefined, {
+                1 ETH = $
+                {ethPrice.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                })} USD
+                })}{" "}
+                USD
               </span>
             )}
           </div>
@@ -294,13 +317,12 @@ const Explore = () => {
             >
               Paste
             </button>
-
             <button
               onClick={handleSearch}
               className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition text-white font-semibold py-3 px-10 rounded-md shadow-lg"
               disabled={!owner.trim() || loading}
             >
-              {loading && NFTs.length === 0 ? 'Searching...' : 'Search'}
+              {loading && NFTs.length === 0 ? "Searching..." : "Search"}
             </button>
           </div>
 
@@ -338,7 +360,7 @@ const Explore = () => {
             {NFTs.map((NFT) => (
               <NftCard
                 key={NFT.id.tokenId + NFT.contract.address}
-                image={NFT.media[0]?.gateway || ''}
+                image={NFT.media[0]?.gateway || ""}
                 id={NFT.id.tokenId}
                 title={safeString(NFT.title)}
                 address={NFT.contract.address}
@@ -362,11 +384,14 @@ const Explore = () => {
         )}
       </main>
 
-      <div className="fixed bottom-16 left-0 right-0 backdrop-blur-md shadow-inner text-cyan-400 font-mono text-xs max-w-6xl mx-auto px-4 py-3 z-50 overflow-x-auto whitespace-nowrap">
-        <h2 className="text-center font-semibold font-monospace mb-2 text-sm text-indigo-400">
+      <div
+        className={`fixed bottom-16 left-0 right-0 backdrop-blur-md shadow-inner text-cyan-400 font-mono text-xs max-w-6xl mx-auto px-4 py-3 z-50 overflow-x-auto whitespace-nowrap transition-all duration-500 ease-in-out ${
+          isHeaderCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+      >
+        <h2 className="text-center font-semibold mb-2 text-sm text-indigo-400">
           Latest Blocks
         </h2>
-
         {blocksLoading ? (
           <p className="text-center text-gray-400">Loading blocks...</p>
         ) : blocksError ? (
@@ -392,7 +417,7 @@ const Explore = () => {
         )}
       </div>
 
-     <footer className="fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md shadow-inner text-center py-4 text-cyan-400 font-medium text-sm z-50">
+      <footer className="fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md shadow-inner text-center py-4 text-cyan-400 font-medium text-sm z-50">
         powered by Alchemy
       </footer>
     </div>
@@ -400,6 +425,7 @@ const Explore = () => {
 };
 
 export default Explore;
+
 
 
 
