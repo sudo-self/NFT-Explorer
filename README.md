@@ -17,3 +17,5 @@ A React-based NFT Explorer application that allows users to search and browse NF
 
 ### API KEY <a href="https://dashboard.alchemy.com/">alchemy</a>
 
+<img width="1440" height="810" alt="Screenshot 2025-08-05 at 10 34 07 PM" src="https://github.com/user-attachments/assets/83f85eb3-da60-4611-ae94-9d9e9298c546" />
+
